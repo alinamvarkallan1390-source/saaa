@@ -15,14 +15,13 @@ data class WatchBackground(
 
 object WatchBackgroundRepository {
     // Helper to create vibrant gradients
-    private fun linear(c1: Color, c2: Color) = Brush.linearGradient(listOf(c1, c2))
+    private fun linear(c1: Color, c2: Color, c3: Color? = null) =
+        if (c3 != null) Brush.linearGradient(listOf(c1, c2, c3)) else Brush.linearGradient(listOf(c1, c2))
     private fun radial(c1: Color, c2: Color, c3: Color? = null) =
-        if (c3 != null) Brush.radialGradient(listOf(c1, c2, c3))
-        else Brush.radialGradient(listOf(c1, c2))
+        if (c3 != null) Brush.radialGradient(listOf(c1, c2, c3)) else Brush.radialGradient(listOf(c1, c2))
     private fun sweep(c1: Color, c2: Color, c3: Color) = Brush.sweepGradient(listOf(c1, c2, c3))
     private fun vertical(c1: Color, c2: Color, c3: Color? = null) =
-        if (c3 != null) Brush.verticalGradient(listOf(c1, c2, c3))
-        else Brush.verticalGradient(listOf(c1, c2))
+        if (c3 != null) Brush.verticalGradient(listOf(c1, c2, c3)) else Brush.verticalGradient(listOf(c1, c2))
 
     val all: List<WatchBackground> = listOf(
         // --- Galaxy & Space (1-15) ---
