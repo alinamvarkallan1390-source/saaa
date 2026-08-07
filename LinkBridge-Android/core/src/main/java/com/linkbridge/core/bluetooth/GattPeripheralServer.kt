@@ -25,6 +25,7 @@ class GattPeripheralServer @Inject constructor(
 
     private val _commands = MutableSharedFlow<ByteArray>(extraBufferCapacity = 64)
     val commands = _commands.asSharedFlow()
+    val isConnected: Boolean get() = connected != null
 
     private val callback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
