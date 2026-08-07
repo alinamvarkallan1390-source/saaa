@@ -21,24 +21,40 @@ jobs:
           distribution: temurin
           java-version: '11'
 
+      - name: Find gradlew in the repo
+        id: find-gradlew
+        run: |
+          echo "Searching for gradlew with git ls-files..."
+          GRADLEW=$(git ls-files | grep -E '(^|/)gradlew$' | head -n1 || true)
+          if [ -z "$GRADLEW" ]; then
+            echo "Not found in git index, trying find..."
+            GRADLEW=$(find . -maxdepth 4 -type f -name gradlew | sed 's|^\./||' | head -n1 || true)
+          fi
+          if [ -n "$GRADLEW" ]; then
+            echo "Found gradlew at: $GRADLEW"
+          else
+            echo "No gradlew found"
+          fi
+          echo "gradlew_path=$GRADLEW" >> $GITHUB_OUTPUT
+
+      - name: Debug: list root files (if gradlew not found)
+        if: steps.find-gradlew.outputs.gradlew_path == ''
+        run: |
+          echo "==== repo root listing ===="
+          ls -la
+          echo "==== find gradlew under repo (for debug) ===="
+          find . -maxdepth 4 -name gradlew -print || true
+
       - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+        if: steps.find-gradlew.outputs.gradlew_path != ''
+        run: chmod +x "${{ steps.find-gradlew.outputs.gradlew_path }}"
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Build (assembleDebug) using found gradlew
+        if: steps.find-gradlew.outputs.gradlew_path != ''
+        run: ./${{ steps.find-gradlew.outputs.gradlew_path }} assembleDebug --no-daemon
 
-      - name: Run emulator and build (assembleDebug)
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 31
-          arch: x86_64
-          target: default
-          force-avd-creation: false
-          script: ./gradlew assembleDebug --no-daemon
+      - name: Fallback: try running gradle wrapper in ./android (common for RN)
+        if: steps.find-gradlew.outputs.gradlew_path == '' && -f android/gradlew
+        run: |
+          chmod +x android/gradlew
+          ./android/gradlew assembleDebug --no-daemon
