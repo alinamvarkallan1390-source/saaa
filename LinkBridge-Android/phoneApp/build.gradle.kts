@@ -5,7 +5,7 @@ android { namespace="com.linkbridge.phone"; compileSdk=35
  buildTypes { getByName("release") { isMinifyEnabled=true; isShrinkResources=true; signingConfig=signingConfigs.getByName("release"); proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),"proguard-rules.pro") } }
  buildFeatures { compose=true; buildConfig=true }
  compileOptions { sourceCompatibility=JavaVersion.VERSION_17; targetCompatibility=JavaVersion.VERSION_17 }
- kotlinOptions { jvmTarget="17" }
+ kotlinOptions { jvmTarget="17"; freeCompilerArgs = freeCompilerArgs + listOf("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api") }
  packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 dependencies { implementation(project(":core")); implementation(platform(libs.compose.bom)); implementation(libs.compose.ui); implementation(libs.compose.preview); debugImplementation(libs.compose.tooling); implementation(libs.material3); implementation(libs.icons); implementation(libs.activity.compose); implementation(libs.lifecycle.runtime); implementation(libs.lifecycle.compose); implementation(libs.viewmodel.compose); implementation(libs.hilt.android); ksp(libs.hilt.compiler); implementation(libs.hilt.navigation); implementation(libs.work.runtime); implementation(libs.hilt.work) }
