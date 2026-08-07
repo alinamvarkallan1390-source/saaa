@@ -21,6 +21,9 @@ jobs:
           distribution: temurin
           java-version: '11'
 
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -31,16 +34,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Set up Android SDK and tools
+      - name: Run emulator and build (assembleDebug)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 31
           arch: x86_64
           target: default
           force-avd-creation: false
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
-
-      - name: Build (assembleDebug)
-        run: ./gradlew assembleDebug --no-daemon
+          script: ./gradlew assembleDebug --no-daemon
