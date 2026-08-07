@@ -1,60 +1,70 @@
-name: Android CI
+name: Build APK
 
 on:
   push:
     paths-ignore:
       - '**.md'
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
 
-      - name: Find gradlew in the repo
-        id: find-gradlew
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install required SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build debug APKs
+        working-directory: LinkBridge-Android
+        run: gradle :phoneApp:assembleDebug :watchApp:assembleDebug --no-daemon --stacktrace
+
+      - name: Collect APKs
         run: |
-          echo "Searching for gradlew with git ls-files..."
-          GRADLEW=$(git ls-files | grep -E '(^|/)gradlew$' | head -n1 || true)
-          if [ -z "$GRADLEW" ]; then
-            echo "Not found in git index, trying find..."
-            GRADLEW=$(find . -maxdepth 4 -type f -name gradlew | sed 's|^\./||' | head -n1 || true)
-          fi
-          if [ -n "$GRADLEW" ]; then
-            echo "Found gradlew at: $GRADLEW"
-          else
-            echo "No gradlew found"
-          fi
-          echo "gradlew_path=$GRADLEW" >> $GITHUB_OUTPUT
+          mkdir -p artifacts
+          find LinkBridge-Android -path '*/build/outputs/apk/*' -name '*.apk' -exec cp -v {} artifacts/ \;
+          echo "==== collected APKs ===="
+          ls -la artifacts
 
-      - name: Debug: list root files (if gradlew not found)
-        if: steps.find-gradlew.outputs.gradlew_path == ''
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: LinkBridge-APKs
+          path: artifacts/*.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release with APKs
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "==== repo root listing ===="
-          ls -la
-          echo "==== find gradlew under repo (for debug) ===="
-          find . -maxdepth 4 -name gradlew -print || true
-
-      - name: Grant execute permission for gradlew
-        if: steps.find-gradlew.outputs.gradlew_path != ''
-        run: chmod +x "${{ steps.find-gradlew.outputs.gradlew_path }}"
-
-      - name: Build (assembleDebug) using found gradlew
-        if: steps.find-gradlew.outputs.gradlew_path != ''
-        run: ./${{ steps.find-gradlew.outputs.gradlew_path }} assembleDebug --no-daemon
-
-      - name: Fallback: try running gradle wrapper in ./android (common for RN)
-        if: steps.find-gradlew.outputs.gradlew_path == '' && -f android/gradlew
-        run: |
-          chmod +x android/gradlew
-          ./android/gradlew assembleDebug --no-daemon
+          TAG="build-${{ github.run_number }}"
+          gh release create "$TAG" artifacts/*.apk \
+            --title "LinkBridge APKs (build #${{ github.run_number }})" \
+            --notes "Debug APKs built from commit ${{ github.sha }}." \
+            --target "${{ github.sha }}"
