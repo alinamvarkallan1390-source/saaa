@@ -1,6 +1,6 @@
 plugins { alias(libs.plugins.android.application); alias(libs.plugins.kotlin.android); alias(libs.plugins.kotlin.compose); alias(libs.plugins.ksp); alias(libs.plugins.hilt) }
 android { namespace="com.linkbridge.phone"; compileSdk=35
- defaultConfig { applicationId="com.linkbridge.phone"; minSdk=29; targetSdk=35; versionCode=1; versionName="1.0.0" }
+ defaultConfig { applicationId="com.linkbridge.phone"; minSdk=26; targetSdk=35; versionCode=2; versionName="1.1.0" }
  signingConfigs { create("release") { storeFile=file(System.getenv("KEYSTORE_PATH") ?: "../release.jks"); storePassword=System.getenv("KEYSTORE_PASSWORD"); keyAlias=System.getenv("KEY_ALIAS"); keyPassword=System.getenv("KEY_PASSWORD") } }
  buildTypes { getByName("release") { isMinifyEnabled=true; isShrinkResources=true; signingConfig=signingConfigs.getByName("release"); proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),"proguard-rules.pro") } }
  buildFeatures { compose=true; buildConfig=true }
