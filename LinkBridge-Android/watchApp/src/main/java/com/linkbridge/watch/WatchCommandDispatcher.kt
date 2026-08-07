@@ -6,10 +6,10 @@ import android.media.*
 import android.net.Uri
 import android.os.*
 import android.provider.Settings
-import android.view.WindowManager
 import android.view.KeyEvent
 import androidx.core.content.getSystemService
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 import javax.inject.Singleton
 

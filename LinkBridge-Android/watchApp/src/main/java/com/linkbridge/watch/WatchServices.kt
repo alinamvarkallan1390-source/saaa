@@ -1,6 +1,7 @@
 package com.linkbridge.watch
 
 import android.app.*
+import android.bluetooth.BluetoothManager
 import android.content.*
 import android.os.*
 import androidx.core.app.NotificationCompat
@@ -101,7 +102,7 @@ class WatchLinkService : Service() {
 
     private fun getBluetoothName(): String {
         return try {
-            val bm = getSystemService(BluetoothManager::class.java)
+            val bm = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             bm.adapter?.name ?: "Watch"
         } catch (_: Exception) {
             "Watch"
