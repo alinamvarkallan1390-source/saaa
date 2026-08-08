@@ -44,6 +44,22 @@ class WatchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+<<<<<<< HEAD
+=======
+        // For wake-to-raise to work without phone - turn screen on
+        if (Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                        android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                        android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            )
+        }
+
+>>>>>>> 98dfe04 (fix: wake-to-raise for TC4G with gravity sensor + find fix + real telemetry)
         if (Build.VERSION.SDK_INT >= 31) {
             permissions.launch(arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT))
         } else {
@@ -78,6 +94,20 @@ class WatchActivity : ComponentActivity() {
         }
     }
 
+<<<<<<< HEAD
+=======
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Wake to raise triggered - ensure screen on
+        if (intent.getBooleanExtra("WAKE_TO_RAISE", false)) {
+            if (Build.VERSION.SDK_INT >= 27) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            }
+        }
+    }
+
+>>>>>>> 98dfe04 (fix: wake-to-raise for TC4G with gravity sensor + find fix + real telemetry)
     private fun startWatchService() {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
