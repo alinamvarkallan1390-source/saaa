@@ -18,14 +18,6 @@ import javax.inject.Singleton
 class GattPeripheralServer @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-<<<<<<< HEAD
-    private val manager = context.getSystemService(BluetoothManager::class.java)
-    private var server: BluetoothGattServer? = null
-    private var connected: BluetoothDevice? = null
-    private lateinit var tx: BluetoothGattCharacteristic
-    private lateinit var rx: BluetoothGattCharacteristic
-
-=======
     private val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private var server: BluetoothGattServer? = null
     private var connected: BluetoothDevice? = null
@@ -36,16 +28,12 @@ class GattPeripheralServer @Inject constructor(
 
     private var latestTelemetry: ByteArray = "TELEMETRY|Unknown|Unknown|Unknown|0|false|0|0|0|0|0".toByteArray()
 
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
     private val _commands = MutableSharedFlow<ByteArray>(extraBufferCapacity = 64)
     val commands = _commands.asSharedFlow()
     val isConnected: Boolean get() = connected != null
 
     private val callback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-<<<<<<< HEAD
-            connected = if (newState == BluetoothProfile.STATE_CONNECTED) device else null
-=======
             Log.d("LinkBridge", "Peripheral onConnectionStateChange: ${device.address} status=$status newState=$newState")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connected = device
@@ -55,7 +43,6 @@ class GattPeripheralServer @Inject constructor(
                     connected = null
                 }
             }
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
         }
 
         override fun onCharacteristicWriteRequest(
@@ -67,17 +54,6 @@ class GattPeripheralServer @Inject constructor(
             offset: Int,
             value: ByteArray
         ) {
-<<<<<<< HEAD
-            if (characteristic.uuid == BluetoothLinkManager.RX_UUID) {
-                val str = value.toString(Charsets.UTF_8)
-                // Handle real ping-pong for latency
-                if (str.startsWith("PING|")) {
-                    val pingTime = str.substringAfter("PING|")
-                    // Respond with PONG same timestamp for real latency measurement
-                    val pong = "PONG|$pingTime".toByteArray()
-                    tx.value = pong
-                    connected?.let { server?.notifyCharacteristicChanged(it, tx, false) }
-=======
             Log.d("LinkBridge", "Peripheral onWrite: ${characteristic.uuid} value=${String(value, Charsets.UTF_8).take(100)} from ${device.address}")
             // Always save last device
             lastDevice = device
@@ -99,19 +75,14 @@ class GattPeripheralServer @Inject constructor(
                     } catch (e: Exception) {
                         Log.e("LinkBridge", "Failed to send PONG", e)
                     }
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
                 } else {
                     _commands.tryEmit(value)
                 }
             }
             if (responseNeeded) {
-<<<<<<< HEAD
-                server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
-=======
                 try {
                     server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
                 } catch (_: Exception) {}
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
             }
         }
 
@@ -124,16 +95,11 @@ class GattPeripheralServer @Inject constructor(
             offset: Int,
             value: ByteArray
         ) {
-<<<<<<< HEAD
-            if (responseNeeded) {
-                server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value)
-=======
             Log.d("LinkBridge", "Peripheral onDescriptorWrite from ${device.address} value=${value.joinToString()}")
             if (responseNeeded) {
                 try {
                     server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value)
                 } catch (_: Exception) {}
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
             }
         }
 
@@ -143,12 +109,6 @@ class GattPeripheralServer @Inject constructor(
             offset: Int,
             characteristic: BluetoothGattCharacteristic
         ) {
-<<<<<<< HEAD
-            if (characteristic.uuid == BluetoothLinkManager.TX_UUID) {
-                server?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, characteristic.value)
-            }
-        }
-=======
             Log.d("LinkBridge", "Peripheral onRead: ${characteristic.uuid} from ${device.address}")
             lastDevice = device
             connected = device
@@ -172,43 +132,22 @@ class GattPeripheralServer @Inject constructor(
         override fun onNotificationSent(device: BluetoothDevice, status: Int) {
             Log.d("LinkBridge", "Peripheral onNotificationSent to ${device.address} status=$status")
         }
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
     }
 
     fun start() {
         if (server != null) return
-<<<<<<< HEAD
-        server = manager.openGattServer(context, callback)
-=======
         try {
             server = manager.openGattServer(context, callback)
         } catch (e: Exception) {
             Log.e("LinkBridge", "Failed to open GATT server", e)
             return
         }
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
 
         val service = BluetoothGattService(
             BluetoothLinkManager.SERVICE_UUID,
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         )
 
-<<<<<<< HEAD
-        // RX characteristic for phone -> watch commands
-        rx = BluetoothGattCharacteristic(
-            BluetoothLinkManager.RX_UUID,
-            BluetoothGattCharacteristic.PROPERTY_WRITE,
-            BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM or
-                    BluetoothGattCharacteristic.PERMISSION_WRITE
-        )
-
-        // TX characteristic for watch -> phone data (telemetry, etc)
-        tx = BluetoothGattCharacteristic(
-            BluetoothLinkManager.TX_UUID,
-            BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_READ,
-            BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM or
-                    BluetoothGattCharacteristic.PERMISSION_READ
-=======
         // FIX: Use plain PERMISSION_WRITE and PERMISSION_READ for Android 8.1 compatibility
         // Previously used ENCRYPTED_MITM which requires bonding and fails on many watches
         rx = BluetoothGattCharacteristic(
@@ -221,7 +160,6 @@ class GattPeripheralServer @Inject constructor(
             BluetoothLinkManager.TX_UUID,
             BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_READ,
             BluetoothGattCharacteristic.PERMISSION_READ
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
         )
 
         val cccd = BluetoothGattDescriptor(
@@ -232,13 +170,6 @@ class GattPeripheralServer @Inject constructor(
 
         service.addCharacteristic(rx)
         service.addCharacteristic(tx)
-<<<<<<< HEAD
-        server?.addService(service)
-
-        // Advertise with REAL device name so phone can see it
-        try {
-            val advertiser = manager.adapter.bluetoothLeAdvertiser
-=======
 
         try {
             server?.addService(service)
@@ -253,7 +184,6 @@ class GattPeripheralServer @Inject constructor(
                 Log.e("LinkBridge", "BLE Advertiser null - device may not support peripheral mode")
                 return
             }
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
             val settings = AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .setConnectable(true)
@@ -262,32 +192,11 @@ class GattPeripheralServer @Inject constructor(
                 .build()
 
             val data = AdvertiseData.Builder()
-<<<<<<< HEAD
-                .setIncludeDeviceName(true) // Real name visible
-=======
                 .setIncludeDeviceName(true)
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
                 .setIncludeTxPowerLevel(true)
                 .addServiceUuid(ParcelUuid(BluetoothLinkManager.SERVICE_UUID))
                 .build()
 
-<<<<<<< HEAD
-            advertiser?.startAdvertising(settings, data, object : AdvertiseCallback() {
-                override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {}
-                override fun onStartFailure(errorCode: Int) {}
-            })
-        } catch (_: Exception) {}
-    }
-
-    fun notify(payload: ByteArray): Boolean {
-        val device = connected ?: return false
-        tx.value = payload
-        return try {
-            server?.notifyCharacteristicChanged(device, tx, false) == true
-        } catch (_: Exception) {
-            false
-        }
-=======
             val scanResponse = AdvertiseData.Builder()
                 .setIncludeDeviceName(true)
                 .build()
@@ -329,25 +238,17 @@ class GattPeripheralServer @Inject constructor(
             }
         }
         return success
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
     }
 
     fun stop() {
         try {
-<<<<<<< HEAD
-            manager.adapter.bluetoothLeAdvertiser?.stopAdvertising(object : AdvertiseCallback() {})
-=======
             manager.adapter?.bluetoothLeAdvertiser?.stopAdvertising(object : AdvertiseCallback() {})
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
         } catch (_: Exception) {}
         try {
             server?.close()
         } catch (_: Exception) {}
         server = null
         connected = null
-<<<<<<< HEAD
-=======
         lastDevice = null
->>>>>>> 750df09 (fix: critical bugs - telemetry real 0% and find and wake)
     }
 }
